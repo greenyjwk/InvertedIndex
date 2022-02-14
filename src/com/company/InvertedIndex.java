@@ -8,7 +8,8 @@ public class InvertedIndex {
 
     private HashSet<String> stopwordsList;
     private File[] fileList;
-    private HashMap<String, ArrayList<Integer>> termList;    //dictionary
+    private HashMap<String, ArrayList<Integer>> termList;
+
 
     public InvertedIndex(File[] fileListParam, File stopwordsFile) {
         this.fileList = fileListParam;
@@ -23,9 +24,7 @@ public class InvertedIndex {
             String singleDoc = new String();
             try (BufferedReader br = new BufferedReader(new FileReader(fileListParam[i]))) {
                 String line;
-                while ((line = br.readLine()) != null) {
-                    singleDoc += line;
-                }
+                while ((line = br.readLine()) != null) singleDoc += line;
             } catch (IOException e) {
                 e.printStackTrace();
             }
@@ -36,8 +35,7 @@ public class InvertedIndex {
 
 
             // ********* Removing stop words *********
-            for (int j = 0; j < tokenList.size(); j++)
-                if (this.stopwordsList.contains(tokenList.get(j))) tokenList.remove(j);
+            for (int j = 0; j < tokenList.size(); j++) if (this.stopwordsList.contains(tokenList.get(j))) tokenList.remove(j);
             // ********* Removing stop words *********
 
 
@@ -63,9 +61,7 @@ public class InvertedIndex {
                     if (!termList.get(word).contains(docId)) termList.get(word).add(docId); // Adding a docID from the list
                 }
             }
-
         }
-        System.out.println(this.termList);
     }
 
 
@@ -98,112 +94,11 @@ public class InvertedIndex {
     }
 
 
-    public ArrayList<String> tokenizer(String doc) {
+    public static ArrayList<String> tokenizer(String doc) {
         StringTokenizer st1 = new StringTokenizer(doc, " ,.:;?![]()'%$#!/+-*\"\'");
         ArrayList<String> tokens = new ArrayList<>();
         while (st1.hasMoreTokens()) tokens.add(st1.nextToken());
         return tokens;
-    }
-
-
-    // single keyword search
-    public void singleKeywordSearch(String keyword) {
-        if (this.termList.containsKey(keyword)) System.out.println(this.termList.get(keyword));
-    }
-
-    public Set<Integer> twoKeywordSearch(String keyword1, String keyword2) {
-        if (this.termList.containsKey(keyword1) && this.termList.containsKey(keyword2)) {
-            Set set1 = new HashSet<Integer>(this.termList.get(keyword1));
-            Set set2 = new HashSet<Integer>(this.termList.get(keyword2));
-            Set<Integer> intersection = new HashSet<>(set1);
-            intersection.retainAll(set2);
-            System.out.println(intersection);
-            return intersection;
-        }else{
-            System.out.printf("No existed");
-            return null;
-        }
-    }
-
-
-    public void twoKeywordSearchConditionOr(String keyword1, String keyword2) {
-        if (this.termList.containsKey(keyword1) || this.termList.containsKey(keyword2)) {
-            Set set1 = new HashSet<Integer>(this.termList.get(keyword1));
-            Set set2 = new HashSet<Integer>(this.termList.get(keyword2));
-
-            Set<Integer> setMerged = new HashSet<>();
-
-            setMerged.addAll(set1);
-            setMerged.addAll(set2);
-            System.out.println(setMerged);
-        }else{
-            System.out.printf("No existed");
-        }
-    }
-
-
-    public void multipleKeywordSearch(String keywords) {
-        ArrayList<String> keywordTokens = tokenizer(keywords);
-        ArrayList<ArrayList<Integer>> tempList = new ArrayList<>();
-        
-        
-        for(String keyword : keywordTokens){
-            if(  this.termList.containsKey(keyword) ){
-                tempList.add(this.termList.get(keyword));
-            }else{
-                System.out.println("Missing keyword");
-                return;
-            }
-        }
-        Collections.sort(tempList, new docListComp() );
-
-        Set<String> interQrels = new HashSet(tempList.get(0));
-        for(int i = 1 ;  i < tempList.size(); i++) interQrels.retainAll( new HashSet(tempList.get(i)));
-
-
-        if(interQrels.size() >= 0){
-            Hashtable<String, Integer> tokenSort = new Hashtable<String, Integer>();
-            for(String token : keywordTokens) tokenSort.put(token, this.termList.get(token).size());
-
-            //move all entries from the hashtable and to a List
-            List<Map.Entry<String, Integer>> list = new ArrayList<Map.Entry<String, Integer>>(tokenSort.entrySet());
-
-            //sort the entries based on the value by custom Comparator
-            Collections.sort(list, new Comparator<Map.Entry<String, Integer>>(){
-                public int compare(Map.Entry<String, Integer> entry1, Map.Entry<String, Integer> entry2) {
-                    return entry1.getValue().compareTo( entry2.getValue() );
-                }
-            });
-
-            Map<String, Integer> mapSortedByValues = new LinkedHashMap<String, Integer>();
-
-            //put all sorted entries in LinkedHashMap
-            for( Map.Entry<String, Integer> entry : list  ) mapSortedByValues.put(entry.getKey(), entry.getValue());
-
-            int i = 1;
-            System.out.println();
-            for( String str : mapSortedByValues.keySet()) {
-                System.out.println( i+ ": " + str);
-                i++;
-            }
-            System.out.println();
-        }else{
-            System.out.println("Missing keyword");
-        }
-    }
-    
-    
-    class docListComp implements Comparator<ArrayList<Integer>>{
-        @Override
-        public int compare(ArrayList<Integer> e1, ArrayList<Integer> e2) {
-            if(e1.size() < e2.size()){
-                return -1;
-            } else if(e1.size() > e2.size()){
-                return 1;
-            }else{
-                return 0;
-            }
-        }
     }
 
 
@@ -220,35 +115,35 @@ public class InvertedIndex {
 
 
         //Create inverted Index instance
-        InvertedIndex index = new InvertedIndex(filesList, stopFilesList[0]);
+        InvertedIndex invertedIndex = new InvertedIndex(filesList, stopFilesList[0]);
 
+        //Create Search instance
+        Search search = new Search();
 
         //Test Cases
-        System.out.println();
-        System.out.println();
-        System.out.println("Task2 Q1_One keyword Query");
-        index.singleKeywordSearch("come");
-        index.singleKeywordSearch("in");
+        System.out.println("Task2 Q1 _ One Keyword Query");
+        search.singleKeywordSearch( invertedIndex.termList, "come");
+        search.singleKeywordSearch(invertedIndex.termList, "in");
 
         System.out.println();
         System.out.println();
 
-        System.out.println("Task2 Q2_Two keywords Query(AND)");
-        index.twoKeywordSearch("come", "get");
-        index.twoKeywordSearch("star", "stori");
+        System.out.println("Task2 Q2 _ Two Keywords Query(AND)");
+        search.twoKeywordSearch(invertedIndex.termList, "come", "get");
+        search.twoKeywordSearch(invertedIndex.termList, "star", "stori");
 
         System.out.println();
         System.out.println();
 
-        System.out.println("Task2 Q3_Two keywords Query(OR)");
-        index.twoKeywordSearchConditionOr("so", "star");
-        index.twoKeywordSearchConditionOr("up", "hi");
+        System.out.println("Task2 Q3 _ Two Keywords Query(OR)");
+        search.twoKeywordSearchConditionOr(invertedIndex.termList, "so", "star");
+        search.twoKeywordSearchConditionOr(invertedIndex.termList, "up", "hi");
 
         System.out.println();
         System.out.println();
 
-        System.out.println("Task2 Q4_Multiple keywords Query(OR)");
-        index.multipleKeywordSearch("here onli from");
-        index.multipleKeywordSearch("come seem like cool");
+        System.out.println("Task2 Q4 _ Multiple Keywords Query");
+        search.multipleKeywordSearch(invertedIndex.termList, "here onli from");
+        search.multipleKeywordSearch(invertedIndex.termList, "come seem like cool");
     }
 }
